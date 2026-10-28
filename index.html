@@ -151,20 +151,20 @@
       </div>
     </div>
   </div>
+
   <script>
     let tipoRegistroActual = ''; 
     let html5QrCode = null;
     let callbackConfirmacionActivo = null;
 
     // =========================================================================
-    // PEGA AQUÍ TU NUEVA URL DE APLICACIÓN WEB DE APPS SCRIPT
+    // PEGA AQUÍ TU NUEVA URL DE APLICACIÓN WEB DE APPS SCRIPT (LA NUEVA IMPLEMENTACIÓN)
     // =========================================================================
     const URL_API_GAS = "https://script.google.com/macros/s/AKfycbyb-z6Ak85r81b2n3FvDMjrfArLzEvfRD_rwcM-hGb1bpHvKVykuJnO3ISsJXQYLKK4yw/exec";
 
     document.addEventListener('DOMContentLoaded', () => {
       const scannerInput = document.getElementById('scannerInput');
       
-      // Soporte para Pistola QR de escritorio conectada por USB/Bluetooth
       scannerInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
@@ -173,11 +173,11 @@
         }
       });
 
-      // Evitar perder el foco en el input manual si el usuario hace clic fuera
+      // El teclado no se abre automáticamente por la remoción del input.focus()[cite: 22]
       document.getElementById('asistencia-scanner').addEventListener('click', function(e) {
         if(e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.tagName === 'INPUT') return;
         if(document.getElementById('modalScannerResultado').style.display === 'none') {
-          document.getElementById('scannerInput').focus();
+          // El usuario puede clickear voluntariamente para escribir
         }
       });
     });
@@ -201,7 +201,6 @@
       const input = document.getElementById('scannerInput');
       input.value = '';
       input.disabled = false;
-      input.focus();
     }
 
     function detenerCamaraQR() {
@@ -217,9 +216,6 @@
       }
     }
 
-    // =========================================================================
-    // LÓGICA DE CÁMARA DIRECTA NATIVA (RESPALDO OCULTO)
-    // =========================================================================
     function dispararCamaraNativaAsistencia() {
       detenerCamaraQR();
       const inputNativo = document.getElementById('scanner_file_nativo');
@@ -258,9 +254,6 @@
         });
     }
 
-    // =========================================================================
-    // LÓGICA DE CÁMARA EN VIVO
-    // =========================================================================
     async function iniciarCamaraQR() {
       const btn = document.getElementById('btnActivarCamara');
       const readerDiv = document.getElementById('reader');
@@ -322,7 +315,7 @@
           msjError += "Permiso denegado por el navegador. ";
         }
         
-        msjError += "¿Desea abrir su aplicación de cámara nativa para capturar el QR?";
+        msjError += "¿Desea usar la Cámara Directa para capturar el QR?";
         
         detenerCamaraQR();
         btn.innerHTML = '<i class="fas fa-camera" style="font-size: 28px;"></i> Nuevo Registro';
@@ -365,7 +358,7 @@
       
       icon.className = 'modal-icon';
       icon.innerHTML = '<i class="fas fa-spinner fa-spin" style="color: #3498db;"></i>';
-      msg.innerHTML = 'Enviando registro a la base de datos...';
+      msg.innerHTML = 'Validando registro de asistencia...';
       document.getElementById('btnContinuarScanner').style.display = 'none';
 
       fetch(URL_API_GAS, {
@@ -398,10 +391,10 @@
                 </div>
               `;
             } else {
-              let iconClass = 'fa-parking'; // Ícono genérico por defecto
+              let iconClass = 'fa-parking'; 
               if (auth.includes('MOTO')) {
                 iconClass = 'fa-motorcycle';
-              } else if (auth.includes('CARRO')) {
+              } else if (auth.includes('CARRO') || auth.includes('AUTO')) {
                 iconClass = 'fa-car';
               } else if (auth.includes('BICI')) {
                 iconClass = 'fa-bicycle';
