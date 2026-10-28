@@ -45,8 +45,8 @@
     .btn-cancel { background: #f1f5f9; color: #475569; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
     .btn-cancel:hover { background: #e2e8f0; }
     
-    .btn-camera { border: none; padding: 14px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 14px; width: 100%; color: white; display: flex; justify-content: center; align-items: center; gap: 8px; }
-    .btn-camera:active { transform: scale(0.98); }
+    .btn-camera { border: none; padding: 22px; border-radius: 15px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 20px; width: 100%; color: white; display: flex; justify-content: center; align-items: center; gap: 12px; box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4); }
+    .btn-camera:active { transform: scale(0.96); box-shadow: 0 2px 8px rgba(52, 152, 219, 0.4); }
     
     #reader { width: 100%; border-radius: 10px; overflow: hidden; border: 2px solid var(--text-gray); margin-bottom: 20px; display: none; background: #000; }
     #reader video { object-fit: cover; border-radius: 10px; width: 100%; }
@@ -58,7 +58,7 @@
     .modal-icon.success { color: #27ae60; }
     .modal-icon.error { color: #e74c3c; }
     .modal-icon.warning { color: #f39c12; }
-    .modal-msg { font-size: 16px; color: var(--text-dark); line-height: 1.5; margin-bottom: 25px; }
+    .modal-msg { font-size: 16px; color: var(--text-dark); line-height: 1.5; margin-bottom: 25px; word-break: break-word; }
     
     .btn-block { background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 30px; font-size: 15px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; }
     .btn-block:active { background-color: #2980b9; transform: scale(0.98); }
@@ -108,15 +108,13 @@
         <input type="date" id="scannerFecha" class="input-field" readonly style="background-color: #f8fafc; font-weight: bold; text-align: center; cursor: not-allowed;">
       </div>
       
-      <!-- CONTENEDOR CÁMARA NATIVA (FALLBACK) -->
+      <!-- CONTENEDOR CÁMARA NATIVA (FALLBACK OCULTO) -->
       <input type="file" id="scanner_file_nativo" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoQRNativaAsistencia(event)">
       
-      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+      <!-- BOTÓN ÚNICO GRANDE -->
+      <div style="margin-bottom: 20px;">
         <button id="btnActivarCamara" class="btn-camera" style="background-color: #3498db;" onclick="iniciarCamaraQR()">
-          <i class="fas fa-video"></i> Escáner en Vivo
-        </button>
-        <button type="button" class="btn-camera" style="background-color: #059669;" onclick="dispararCamaraNativaAsistencia()" title="Cámara Directa (Evita bloqueos del navegador)">
-          <i class="fas fa-camera"></i> Cámara Directa
+          <i class="fas fa-camera" style="font-size: 28px;"></i> Nuevo Registro
         </button>
       </div>
       
@@ -153,13 +151,14 @@
       </div>
     </div>
   </div>
-
   <script>
     let tipoRegistroActual = ''; 
     let html5QrCode = null;
     let callbackConfirmacionActivo = null;
 
-    // URL de tu aplicación web (Script puente)
+    // =========================================================================
+    // PEGA AQUÍ TU NUEVA URL DE APLICACIÓN WEB DE APPS SCRIPT
+    // =========================================================================
     const URL_API_GAS = "https://script.google.com/macros/s/AKfycbyb-z6Ak85r81b2n3FvDMjrfArLzEvfRD_rwcM-hGb1bpHvKVykuJnO3ISsJXQYLKK4yw/exec";
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -174,7 +173,7 @@
         }
       });
 
-      // Evitar perder el foco en el input manual si el usuario hace clic fuera de los botones
+      // Evitar perder el foco en el input manual si el usuario hace clic fuera
       document.getElementById('asistencia-scanner').addEventListener('click', function(e) {
         if(e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.tagName === 'INPUT') return;
         if(document.getElementById('modalScannerResultado').style.display === 'none') {
@@ -212,13 +211,15 @@
           html5QrCode = null;
           document.getElementById('reader').style.display = 'none';
         }).catch(err => {
-          console.log("Error deteniendo cámara", err);
           html5QrCode = null;
           document.getElementById('reader').style.display = 'none';
         });
       }
     }
 
+    // =========================================================================
+    // LÓGICA DE CÁMARA DIRECTA NATIVA (RESPALDO OCULTO)
+    // =========================================================================
     function dispararCamaraNativaAsistencia() {
       detenerCamaraQR();
       const inputNativo = document.getElementById('scanner_file_nativo');
@@ -257,13 +258,16 @@
         });
     }
 
+    // =========================================================================
+    // LÓGICA DE CÁMARA EN VIVO
+    // =========================================================================
     async function iniciarCamaraQR() {
       const btn = document.getElementById('btnActivarCamara');
       const readerDiv = document.getElementById('reader');
       
       if (html5QrCode) {
         detenerCamaraQR();
-        btn.innerHTML = '<i class="fas fa-video"></i> Escáner en Vivo';
+        btn.innerHTML = '<i class="fas fa-camera" style="font-size: 28px;"></i> Nuevo Registro';
         btn.style.backgroundColor = '#3498db';
         return;
       }
@@ -274,7 +278,7 @@
       }
       
       readerDiv.style.display = 'block';
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando...';
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 28px;"></i> Iniciando...';
       btn.style.backgroundColor = '#f39c12';
       btn.disabled = true;
 
@@ -298,14 +302,14 @@
             { fps: 10, qrbox: { width: 250, height: 250 } },
             (decodedText, decodedResult) => {
               detenerCamaraQR();
-              btn.innerHTML = '<i class="fas fa-video"></i> Escáner en Vivo';
+              btn.innerHTML = '<i class="fas fa-camera" style="font-size: 28px;"></i> Nuevo Registro';
               btn.style.backgroundColor = '#3498db';
               procesarEscaneo(decodedText);
             },
             (errorMessage) => {}
           );
           
-          btn.innerHTML = '<i class="fas fa-stop"></i> Detener Cámara';
+          btn.innerHTML = '<i class="fas fa-stop" style="font-size: 28px;"></i> Detener Cámara';
           btn.style.backgroundColor = '#e74c3c';
           btn.disabled = false;
         } else {
@@ -318,10 +322,10 @@
           msjError += "Permiso denegado por el navegador. ";
         }
         
-        msjError += "¿Desea usar la Cámara Directa para capturar el QR?";
+        msjError += "¿Desea abrir su aplicación de cámara nativa para capturar el QR?";
         
         detenerCamaraQR();
-        btn.innerHTML = '<i class="fas fa-video"></i> Escáner en Vivo';
+        btn.innerHTML = '<i class="fas fa-camera" style="font-size: 28px;"></i> Nuevo Registro';
         btn.style.backgroundColor = '#3498db';
         btn.disabled = false;
         
@@ -346,6 +350,9 @@
       input.focus();
     }
 
+    // =========================================================================
+    // PROCESAMIENTO Y ENVÍO AL SERVIDOR (BACKEND) VÍA FETCH
+    // =========================================================================
     function procesarEscaneo(valor) {
       if (!valor) return;
       const input = document.getElementById('scannerInput');
@@ -361,7 +368,6 @@
       msg.innerHTML = 'Enviando registro a la base de datos...';
       document.getElementById('btnContinuarScanner').style.display = 'none';
 
-      // Comunicación estructurada mediante Fetch API para evitar el error de google.script.run
       fetch(URL_API_GAS, {
         method: 'POST',
         body: JSON.stringify({
@@ -392,6 +398,9 @@
       });
     }
 
+    // =========================================================================
+    // UTILIDADES DE UI
+    // =========================================================================
     function mostrarConfirmacionModal(mensaje, callback) {
       document.getElementById('msgConfirmacion').textContent = mensaje;
       document.getElementById('modalConfirmacion').style.display = 'flex';
