@@ -159,7 +159,9 @@
     let html5QrCode = null;
     let callbackConfirmacionActivo = null;
 
-    // Ajustar la fecha actual al abrir la app
+    // URL de tu aplicación web (Script puente)
+    const URL_API_GAS = "https://script.google.com/macros/s/AKfycbyb-z6Ak85r81b2n3FvDMjrfArLzEvfRD_rwcM-hGb1bpHvKVykuJnO3ISsJXQYLKK4yw/exec";
+
     document.addEventListener('DOMContentLoaded', () => {
       const scannerInput = document.getElementById('scannerInput');
       
@@ -192,7 +194,6 @@
       document.getElementById('scanner-titulo').innerHTML = `<i class="fas fa-qrcode" style="color:${color};"></i> ${titulo}`;
       document.getElementById('scanner-tipo-text').textContent = tipo.toLowerCase();
       
-      // Setear fecha actual local
       let hoy = new Date();
       let offset = hoy.getTimezoneOffset() * 60000;
       let localISOTime = (new Date(hoy - offset)).toISOString().split('T')[0];
@@ -218,9 +219,6 @@
       }
     }
 
-    // =========================================================================
-    // LÓGICA DE CÁMARA DIRECTA NATIVA (ELUDE BLOQUEO DE IFRAMES EN MÓVILES)
-    // =========================================================================
     function dispararCamaraNativaAsistencia() {
       detenerCamaraQR();
       const inputNativo = document.getElementById('scanner_file_nativo');
@@ -259,9 +257,6 @@
         });
     }
 
-    // =========================================================================
-    // LÓGICA DE CÁMARA EN VIVO
-    // =========================================================================
     async function iniciarCamaraQR() {
       const btn = document.getElementById('btnActivarCamara');
       const readerDiv = document.getElementById('reader');
@@ -318,9 +313,11 @@
         }
       } catch (err) {
         let msjError = "No se pudo iniciar el escáner en vivo. ";
+        
         if (err.name === 'NotAllowedError' || (err.message && err.message.includes('NotAllowedError')) || (err.message && err.message.includes('Permission denied'))) {
-          msjError += "El navegador bloquea la cámara dentro de esta plataforma por seguridad. ";
+          msjError += "Permiso denegado por el navegador. ";
         }
+        
         msjError += "¿Desea usar la Cámara Directa para capturar el QR?";
         
         detenerCamaraQR();
@@ -349,16 +346,6 @@
       input.focus();
     }
 
-    // =========================================================================
-    // PROCESAMIENTO Y ENVÍO AL SERVIDOR (BACKEND)
-    // =========================================================================
-// =========================================================================
-    // PROCESAMIENTO Y ENVÍO AL SERVIDOR (BACKEND) VÍA FETCH
-    // =========================================================================
-    
-    // PEGA AQUÍ TU URL DE APLICACIÓN WEB DE APPS SCRIPT
-    const URL_API_GAS = "https://script.google.com/macros/s/AKfycbyb-z6Ak85r81b2n3FvDMjrfArLzEvfRD_rwcM-hGb1bpHvKVykuJnO3ISsJXQYLKK4yw/exec";
-
     function procesarEscaneo(valor) {
       if (!valor) return;
       const input = document.getElementById('scannerInput');
@@ -374,7 +361,7 @@
       msg.innerHTML = 'Enviando registro a la base de datos...';
       document.getElementById('btnContinuarScanner').style.display = 'none';
 
-      // Comunicación con la API externa reemplazando google.script.run
+      // Comunicación estructurada mediante Fetch API para evitar el error de google.script.run
       fetch(URL_API_GAS, {
         method: 'POST',
         body: JSON.stringify({
@@ -382,7 +369,6 @@
           identificacion: valor,
           tipoRegistro: tipoRegistroActual
         }),
-        // Se usa text/plain para evitar bloqueos de seguridad CORS en el navegador móvil
         headers: { 'Content-Type': 'text/plain;charset=utf-8' }
       })
       .then(response => response.json())
@@ -406,32 +392,6 @@
       });
     }
 
-      // Llamado a la función en Codigo.gs
-      google.script.run
-        .withSuccessHandler(res => {
-          document.getElementById('btnContinuarScanner').style.display = 'block';
-          if (res && res.exito) {
-            icon.className = 'modal-icon success';
-            icon.innerHTML = '<i class="fas fa-check-circle"></i>';
-            msg.innerHTML = res.mensaje; 
-          } else {
-            icon.className = 'modal-icon error';
-            icon.innerHTML = '<i class="fas fa-times-circle"></i>';
-            msg.innerHTML = res ? res.mensaje : 'Error desconocido. Intente nuevamente.';
-          }
-        })
-        .withFailureHandler(err => {
-          document.getElementById('btnContinuarScanner').style.display = 'block';
-          icon.className = 'modal-icon error';
-          icon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
-          msg.innerHTML = 'Error de conexión con el servidor: ' + err.message;
-        })
-        .registrarAsistenciaScanner(valor, tipoRegistroActual);
-    }
-
-    // =========================================================================
-    // UTILIDADES DE UI
-    // =========================================================================
     function mostrarConfirmacionModal(mensaje, callback) {
       document.getElementById('msgConfirmacion').textContent = mensaje;
       document.getElementById('modalConfirmacion').style.display = 'flex';
