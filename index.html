@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Escáner de Asistencia - GAIA VITARE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    :root {
+      --bg-main: #F4F7FE;
+      --text-dark: #2B3674;
+      --text-gray: #A3AED0;
+      --primary: #1abc9c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--bg-main); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+    
+    .logo-container { text-align: center; margin-bottom: 30px; margin-top: 20px; }
+    .logo-container img { max-width: 160px; }
+
+    /* ESTILOS MENÚ INICIAL */
+    #asistencia-menu { width: 100%; max-width: 500px; animation: fadeIn 0.4s; }
+    .asistencia-card { background: white; border-radius: 15px; padding: 40px 20px; text-align: center; box-shadow: 0 8px 25px rgba(0,0,0,0.05); cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease; margin-bottom: 25px; }
+    .asistencia-card:active { transform: scale(0.98); }
+    .asistencia-card.ingreso { border-color: #27ae60; }
+    .asistencia-card.salida { border-color: #e74c3c; }
+    .asistencia-card i { font-size: 60px; margin-bottom: 15px; }
+    .asistencia-card h3 { color: var(--text-dark); font-size: 22px; margin-bottom: 10px; }
+    .asistencia-card p { color: var(--text-gray); font-size: 14px; }
+
+    /* ESTILOS VISTA DEL ESCÁNER */
+    #asistencia-scanner { width: 100%; max-width: 500px; display: none; animation: fadeIn 0.4s; }
+    .scanner-view { background: white; padding: 30px 20px; border-radius: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); text-align: center; }
+    
+    .form-group { margin-bottom: 15px; text-align: left; }
+    .form-group label { display: block; font-size: 13px; color: var(--text-dark); margin-bottom: 5px; font-weight: bold; }
+    .input-field { width: 100%; padding: 12px; font-size: 15px; border: 2px solid #e0e6ed; border-radius: 8px; outline: none; background: #fff; transition: 0.3s; color: var(--text-dark); }
+    .input-field:focus { border-color: var(--primary); }
+    
+    .scanner-input { width: 100%; padding: 15px 20px; font-size: 22px; text-align: center; border: 2px solid #ccc; border-radius: 10px; outline: none; font-weight: bold; letter-spacing: 2px; transition: border-color 0.3s; margin: 10px 0; }
+    .scanner-input:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(26,188,156,0.2); }
+    
+    /* BOTONES */
+    .btn-cancel { background: #f1f5f9; color: #475569; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-cancel:hover { background: #e2e8f0; }
+    
+    .btn-camera { border: none; padding: 14px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 14px; width: 100%; color: white; display: flex; justify-content: center; align-items: center; gap: 8px; }
+    .btn-camera:active { transform: scale(0.98); }
+    
+    #reader { width: 100%; border-radius: 10px; overflow: hidden; border: 2px solid var(--text-gray); margin-bottom: 20px; display: none; background: #000; }
+    #reader video { object-fit: cover; border-radius: 10px; width: 100%; }
+
+    /* MODALES DE RESULTADO Y ALERTAS */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 3000; padding: 20px; backdrop-filter: blur(3px); }
+    .modal-box { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.3); animation: scaleIn 0.3s ease; }
+    .modal-icon { font-size: 60px; margin-bottom: 15px; }
+    .modal-icon.success { color: #27ae60; }
+    .modal-icon.error { color: #e74c3c; }
+    .modal-icon.warning { color: #f39c12; }
+    .modal-msg { font-size: 16px; color: var(--text-dark); line-height: 1.5; margin-bottom: 25px; }
+    
+    .btn-block { background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 30px; font-size: 15px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; }
+    .btn-block:active { background-color: #2980b9; transform: scale(0.98); }
+    
+    .modal-buttons-row { display: flex; gap: 10px; justify-content: center; }
+    .modal-buttons-row button { flex: 1; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: bold; border: none; cursor: pointer; color: white; }
+    .btn-cancel-modal { background-color: #94a3b8; }
+    .btn-accept-modal { background-color: #10b981; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  </style>
+</head>
+<body>
+
+  <div class="logo-container">
+    <img src="https://i.postimg.cc/R0sW077H/Logo-con-descripcion.png" alt="Logo GEEC GAIA VITARE">
+  </div>
+
+  <!-- MENÚ INICIAL -->
+  <div id="asistencia-menu">
+    <h2 style="text-align:center; color: var(--text-dark); margin-bottom: 25px;">Control de Asistencia</h2>
+    
+    <div class="asistencia-card ingreso" onclick="abrirScanner('INGRESO')">
+      <i class="fas fa-sign-in-alt" style="color: #27ae60;"></i>
+      <h3>Registrar Ingreso</h3>
+      <p>Escaneo de código QR para registrar la entrada.</p>
+    </div>
+    
+    <div class="asistencia-card salida" onclick="abrirScanner('SALIDA')">
+      <i class="fas fa-sign-out-alt" style="color: #e74c3c;"></i>
+      <h3>Registrar Salida</h3>
+      <p>Escaneo de código QR para registrar la salida.</p>
+    </div>
+  </div>
+  
+  <!-- VISTA DEL ESCÁNER -->
+  <div id="asistencia-scanner">
+    <div class="scanner-view">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <button class="btn-cancel" onclick="cerrarScanner()"><i class="fas fa-arrow-left"></i> Volver</button>
+        <h2 id="scanner-titulo" style="color: var(--text-dark); margin: 0; font-size: 18px;"></h2>
+      </div>
+      
+      <div class="form-group">
+        <label>Fecha del registro:</label>
+        <input type="date" id="scannerFecha" class="input-field" readonly style="background-color: #f8fafc; font-weight: bold; text-align: center; cursor: not-allowed;">
+      </div>
+      
+      <!-- CONTENEDOR CÁMARA NATIVA (FALLBACK) -->
+      <input type="file" id="scanner_file_nativo" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoQRNativaAsistencia(event)">
+      
+      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <button id="btnActivarCamara" class="btn-camera" style="background-color: #3498db;" onclick="iniciarCamaraQR()">
+          <i class="fas fa-video"></i> Escáner en Vivo
+        </button>
+        <button type="button" class="btn-camera" style="background-color: #059669;" onclick="dispararCamaraNativaAsistencia()" title="Cámara Directa (Evita bloqueos del navegador)">
+          <i class="fas fa-camera"></i> Cámara Directa
+        </button>
+      </div>
+      
+      <div id="reader"></div>
+      
+      <div class="form-group" style="margin-top: 20px;">
+        <label>Identificación (Manual o Pistola QR):</label>
+        <input type="text" id="scannerInput" class="scanner-input" placeholder="Esperando escaneo..." autocomplete="off">
+      </div>
+      
+      <p style="color: var(--text-gray); font-size: 12px; margin-top: 15px; line-height: 1.4;">
+        El sistema registrará automáticamente el <strong id="scanner-tipo-text"></strong> una vez detecte el código QR de la tarjeta.
+      </p>
+    </div>
+  </div>
+
+  <!-- MODAL: RESULTADO DEL ESCÁNER (ÉXITO / ERROR / CARGA) -->
+  <div class="modal-overlay" id="modalScannerResultado">
+    <div class="modal-box">
+      <div id="scannerIcon" class="modal-icon"><i class="fas fa-spinner fa-spin" style="color: #3498db;"></i></div>
+      <p class="modal-msg" id="scannerMsg">Procesando...</p>
+      <button class="btn-block" id="btnContinuarScanner" style="display: none;" onclick="cerrarModalScanner()">Continuar Escaneando</button>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRMACIÓN GENÉRICA -->
+  <div class="modal-overlay" id="modalConfirmacion">
+    <div class="modal-box">
+      <div class="modal-icon warning"><i class="fas fa-exclamation-triangle"></i></div>
+      <p class="modal-msg" id="msgConfirmacion">¿Estás seguro?</p>
+      <div class="modal-buttons-row">
+        <button class="btn-cancel-modal" onclick="cerrarConfirmacion()">Cancelar</button>
+        <button class="btn-accept-modal" id="btnAceptarConfirmacion">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let tipoRegistroActual = ''; 
+    let html5QrCode = null;
+    let callbackConfirmacionActivo = null;
+
+    // Ajustar la fecha actual al abrir la app
+    document.addEventListener('DOMContentLoaded', () => {
+      const scannerInput = document.getElementById('scannerInput');
+      
+      // Soporte para Pistola QR de escritorio conectada por USB/Bluetooth
+      scannerInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const val = this.value.trim();
+          procesarEscaneo(val);
+        }
+      });
+
+      // Evitar perder el foco en el input manual si el usuario hace clic fuera de los botones
+      document.getElementById('asistencia-scanner').addEventListener('click', function(e) {
+        if(e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.tagName === 'INPUT') return;
+        if(document.getElementById('modalScannerResultado').style.display === 'none') {
+          document.getElementById('scannerInput').focus();
+        }
+      });
+    });
+
+    function abrirScanner(tipo) {
+      tipoRegistroActual = tipo;
+      document.getElementById('asistencia-menu').style.display = 'none';
+      document.getElementById('asistencia-scanner').style.display = 'block';
+      
+      let titulo = tipo === 'INGRESO' ? 'Registrar Ingresos' : 'Registrar Salidas';
+      let color = tipo === 'INGRESO' ? '#27ae60' : '#e74c3c';
+      
+      document.getElementById('scanner-titulo').innerHTML = `<i class="fas fa-qrcode" style="color:${color};"></i> ${titulo}`;
+      document.getElementById('scanner-tipo-text').textContent = tipo.toLowerCase();
+      
+      // Setear fecha actual local
+      let hoy = new Date();
+      let offset = hoy.getTimezoneOffset() * 60000;
+      let localISOTime = (new Date(hoy - offset)).toISOString().split('T')[0];
+      document.getElementById('scannerFecha').value = localISOTime;
+      
+      const input = document.getElementById('scannerInput');
+      input.value = '';
+      input.disabled = false;
+      input.focus();
+    }
+
+    function detenerCamaraQR() {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+          html5QrCode = null;
+          document.getElementById('reader').style.display = 'none';
+        }).catch(err => {
+          console.log("Error deteniendo cámara", err);
+          html5QrCode = null;
+          document.getElementById('reader').style.display = 'none';
+        });
+      }
+    }
+
+    // =========================================================================
+    // LÓGICA DE CÁMARA DIRECTA NATIVA (ELUDE BLOQUEO DE IFRAMES EN MÓVILES)
+    // =========================================================================
+    function dispararCamaraNativaAsistencia() {
+      detenerCamaraQR();
+      const inputNativo = document.getElementById('scanner_file_nativo');
+      if (inputNativo) {
+        inputNativo.value = ""; 
+        inputNativo.click();
+      }
+    }
+
+    function procesarFotoQRNativaAsistencia(event) {
+      const archivo = event.target.files[0];
+      if (!archivo) return;
+
+      document.getElementById('modalScannerResultado').style.display = 'flex';
+      const icon = document.getElementById('scannerIcon');
+      const msg = document.getElementById('scannerMsg');
+      
+      icon.className = 'modal-icon';
+      icon.innerHTML = '<i class="fas fa-spinner fa-spin" style="color: #3498db;"></i>';
+      msg.innerHTML = 'Analizando imagen para detectar el código QR...';
+      document.getElementById('btnContinuarScanner').style.display = 'none';
+
+      const lectorArchivo = new Html5Qrcode("reader");
+      lectorArchivo.scanFile(archivo, true)
+        .then(decodedText => {
+          let codigoLeido = decodedText.trim();
+          try { lectorArchivo.clear(); } catch(e) {}
+          procesarEscaneo(codigoLeido);
+        })
+        .catch(err => {
+          try { lectorArchivo.clear(); } catch(e) {}
+          icon.className = 'modal-icon error';
+          icon.innerHTML = '<i class="fas fa-times-circle"></i>';
+          msg.innerHTML = "No se detectó un código QR legible en la foto. Asegúrese de enfocar correctamente el carnet y vuelva a intentarlo.";
+          document.getElementById('btnContinuarScanner').style.display = 'block';
+        });
+    }
+
+    // =========================================================================
+    // LÓGICA DE CÁMARA EN VIVO
+    // =========================================================================
+    async function iniciarCamaraQR() {
+      const btn = document.getElementById('btnActivarCamara');
+      const readerDiv = document.getElementById('reader');
+      
+      if (html5QrCode) {
+        detenerCamaraQR();
+        btn.innerHTML = '<i class="fas fa-video"></i> Escáner en Vivo';
+        btn.style.backgroundColor = '#3498db';
+        return;
+      }
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        dispararCamaraNativaAsistencia();
+        return;
+      }
+      
+      readerDiv.style.display = 'block';
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando...';
+      btn.style.backgroundColor = '#f39c12';
+      btn.disabled = true;
+
+      try {
+        const devices = await Html5Qrcode.getCameras();
+        
+        if (devices && devices.length > 0) {
+          html5QrCode = new Html5Qrcode("reader");
+          
+          let cameraId = devices[0].id;
+          for (let i = 0; i < devices.length; i++) {
+            let label = devices[i].label.toLowerCase();
+            if (label.includes("back") || label.includes("trasera") || label.includes("environment")) {
+              cameraId = devices[i].id;
+              break;
+            }
+          }
+
+          await html5QrCode.start(
+            cameraId, 
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            (decodedText, decodedResult) => {
+              detenerCamaraQR();
+              btn.innerHTML = '<i class="fas fa-video"></i> Escáner en Vivo';
+              btn.style.backgroundColor = '#3498db';
+              procesarEscaneo(decodedText);
+            },
+            (errorMessage) => {}
+          );
+          
+          btn.innerHTML = '<i class="fas fa-stop"></i> Detener Cámara';
+          btn.style.backgroundColor = '#e74c3c';
+          btn.disabled = false;
+        } else {
+          throw new Error("No se encontraron cámaras conectadas al dispositivo.");
+        }
+      } catch (err) {
+        let msjError = "No se pudo iniciar el escáner en vivo. ";
+        if (err.name === 'NotAllowedError' || (err.message && err.message.includes('NotAllowedError')) || (err.message && err.message.includes('Permission denied'))) {
+          msjError += "El navegador bloquea la cámara dentro de esta plataforma por seguridad. ";
+        }
+        msjError += "¿Desea usar la Cámara Directa para capturar el QR?";
+        
+        detenerCamaraQR();
+        btn.innerHTML = '<i class="fas fa-video"></i> Escáner en Vivo';
+        btn.style.backgroundColor = '#3498db';
+        btn.disabled = false;
+        
+        mostrarConfirmacionModal(msjError, function() {
+           dispararCamaraNativaAsistencia();
+        });
+      }
+    }
+
+    function cerrarScanner() {
+      detenerCamaraQR();
+      document.getElementById('asistencia-scanner').style.display = 'none';
+      document.getElementById('asistencia-menu').style.display = 'block';
+      document.getElementById('scannerInput').value = '';
+    }
+
+    function cerrarModalScanner() {
+      document.getElementById('modalScannerResultado').style.display = 'none';
+      const input = document.getElementById('scannerInput');
+      input.value = '';
+      input.disabled = false;
+      input.focus();
+    }
+
+    // =========================================================================
+    // PROCESAMIENTO Y ENVÍO AL SERVIDOR (BACKEND)
+    // =========================================================================
+// =========================================================================
+    // PROCESAMIENTO Y ENVÍO AL SERVIDOR (BACKEND) VÍA FETCH
+    // =========================================================================
+    
+    // PEGA AQUÍ TU URL DE APLICACIÓN WEB DE APPS SCRIPT
+    const URL_API_GAS = "https://script.google.com/macros/s/AKfycbyb-z6Ak85r81b2n3FvDMjrfArLzEvfRD_rwcM-hGb1bpHvKVykuJnO3ISsJXQYLKK4yw/exec";
+
+    function procesarEscaneo(valor) {
+      if (!valor) return;
+      const input = document.getElementById('scannerInput');
+      input.disabled = true; 
+      input.value = valor;
+
+      document.getElementById('modalScannerResultado').style.display = 'flex';
+      const icon = document.getElementById('scannerIcon');
+      const msg = document.getElementById('scannerMsg');
+      
+      icon.className = 'modal-icon';
+      icon.innerHTML = '<i class="fas fa-spinner fa-spin" style="color: #3498db;"></i>';
+      msg.innerHTML = 'Enviando registro a la base de datos...';
+      document.getElementById('btnContinuarScanner').style.display = 'none';
+
+      // Comunicación con la API externa reemplazando google.script.run
+      fetch(URL_API_GAS, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'registrarAsistenciaScanner',
+          identificacion: valor,
+          tipoRegistro: tipoRegistroActual
+        }),
+        // Se usa text/plain para evitar bloqueos de seguridad CORS en el navegador móvil
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      })
+      .then(response => response.json())
+      .then(res => {
+        document.getElementById('btnContinuarScanner').style.display = 'block';
+        if (res && res.exito) {
+          icon.className = 'modal-icon success';
+          icon.innerHTML = '<i class="fas fa-check-circle"></i>';
+          msg.innerHTML = res.mensaje; 
+        } else {
+          icon.className = 'modal-icon error';
+          icon.innerHTML = '<i class="fas fa-times-circle"></i>';
+          msg.innerHTML = res ? res.mensaje : 'Error desconocido. Intente nuevamente.';
+        }
+      })
+      .catch(err => {
+        document.getElementById('btnContinuarScanner').style.display = 'block';
+        icon.className = 'modal-icon error';
+        icon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+        msg.innerHTML = 'Error de conexión con el servidor: ' + err.message;
+      });
+    }
+
+      // Llamado a la función en Codigo.gs
+      google.script.run
+        .withSuccessHandler(res => {
+          document.getElementById('btnContinuarScanner').style.display = 'block';
+          if (res && res.exito) {
+            icon.className = 'modal-icon success';
+            icon.innerHTML = '<i class="fas fa-check-circle"></i>';
+            msg.innerHTML = res.mensaje; 
+          } else {
+            icon.className = 'modal-icon error';
+            icon.innerHTML = '<i class="fas fa-times-circle"></i>';
+            msg.innerHTML = res ? res.mensaje : 'Error desconocido. Intente nuevamente.';
+          }
+        })
+        .withFailureHandler(err => {
+          document.getElementById('btnContinuarScanner').style.display = 'block';
+          icon.className = 'modal-icon error';
+          icon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+          msg.innerHTML = 'Error de conexión con el servidor: ' + err.message;
+        })
+        .registrarAsistenciaScanner(valor, tipoRegistroActual);
+    }
+
+    // =========================================================================
+    // UTILIDADES DE UI
+    // =========================================================================
+    function mostrarConfirmacionModal(mensaje, callback) {
+      document.getElementById('msgConfirmacion').textContent = mensaje;
+      document.getElementById('modalConfirmacion').style.display = 'flex';
+      callbackConfirmacionActivo = callback;
+    }
+
+    function cerrarConfirmacion() {
+      document.getElementById('modalConfirmacion').style.display = 'none';
+      callbackConfirmacionActivo = null;
+    }
+
+    document.getElementById('btnAceptarConfirmacion').addEventListener('click', function() {
+      if(callbackConfirmacionActivo) callbackConfirmacionActivo();
+      cerrarConfirmacion();
+    });
+  </script>
+</body>
+</html>
