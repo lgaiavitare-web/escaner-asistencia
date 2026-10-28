@@ -380,10 +380,44 @@
       .then(response => response.json())
       .then(res => {
         document.getElementById('btnContinuarScanner').style.display = 'block';
+        
         if (res && res.exito) {
           icon.className = 'modal-icon success';
           icon.innerHTML = '<i class="fas fa-check-circle"></i>';
-          msg.innerHTML = res.mensaje; 
+          
+          let parkingHtml = '';
+          if (tipoRegistroActual === 'INGRESO' && res.parqueadero !== undefined) {
+            let auth = res.parqueadero.trim().toUpperCase();
+            
+            if (auth === 'NO' || auth === 'N/A' || auth === 'NA' || auth === '') {
+              parkingHtml = `
+                <div style="margin-top: 20px; padding: 20px; border-radius: 12px; background: #fee2e2; border: 3px solid #ef4444; color: #b91c1c; animation: scaleIn 0.4s ease;">
+                  <i class="fas fa-ban" style="font-size: 40px; margin-bottom: 10px;"></i>
+                  <div style="font-size: 20px; font-weight: 900; text-transform: uppercase;">SIN PARQUEADERO</div>
+                  <div style="font-size: 13px; font-weight: bold; margin-top: 5px;">No autorizado para ingresar vehículo</div>
+                </div>
+              `;
+            } else {
+              let iconClass = 'fa-parking'; // Ícono genérico por defecto
+              if (auth.includes('MOTO')) {
+                iconClass = 'fa-motorcycle';
+              } else if (auth.includes('CARRO')) {
+                iconClass = 'fa-car';
+              } else if (auth.includes('BICI')) {
+                iconClass = 'fa-bicycle';
+              }
+
+              parkingHtml = `
+                <div style="margin-top: 20px; padding: 20px; border-radius: 12px; background: #d1fae5; border: 3px solid #10b981; color: #047857; animation: scaleIn 0.4s ease;">
+                  <i class="fas ${iconClass}" style="font-size: 45px; margin-bottom: 10px;"></i>
+                  <div style="font-size: 16px; font-weight: 900; text-transform: uppercase;">PARQUEADERO AUTORIZADO</div>
+                  <div style="font-size: 26px; font-weight: 900; color: #065f46; margin-top: 8px; background: white; padding: 5px; border-radius: 8px; border: 2px solid #047857;">${auth}</div>
+                </div>
+              `;
+            }
+          }
+          
+          msg.innerHTML = res.mensaje + parkingHtml; 
         } else {
           icon.className = 'modal-icon error';
           icon.innerHTML = '<i class="fas fa-times-circle"></i>';
