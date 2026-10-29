@@ -28,8 +28,8 @@
     .form-group label { display: block; font-size: 13px; color: var(--text-dark); margin-bottom: 5px; font-weight: bold; }
     .input-field { width: 100%; padding: 12px; font-size: 15px; border: 2px solid #e0e6ed; border-radius: 8px; outline: none; background: #fff; color: var(--text-dark); }
     
-    /* Input con InputMode = none bloquea el teclado virtual en Android/iOS */
-    .scanner-input { width: 100%; padding: 15px 20px; font-size: 22px; text-align: center; border: 2px solid #ccc; border-radius: 10px; outline: none; font-weight: bold; letter-spacing: 2px; margin: 10px 0; background-color: #fff; }
+    /* CAMPO MANUAL: type="number" para teclado numérico, estilo impecable */
+    .scanner-input { width: 100%; padding: 15px 20px; font-size: 20px; text-align: center; border: 2px solid #ccc; border-radius: 10px; outline: none; font-weight: bold; letter-spacing: 2px; margin: 10px 0; background-color: #fff; }
     .scanner-input:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(26,188,156,0.2); }
     
     .btn-cancel { background: #f1f5f9; color: #475569; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
@@ -97,8 +97,8 @@
       
       <div class="form-group" style="margin-top: 20px;">
         <label>Identificación (Manual o Pistola QR):</label>
-        <!-- inputmode="none" es LA CLAVE para que Android/iOS no desplieguen el teclado virtual -->
-        <input type="text" id="scannerInput" class="scanner-input" placeholder="Esperando escaneo..." autocomplete="off" inputmode="none" readonly>
+        <!-- Tipo 'number' para teclado numérico. SIN automatismos, 100% manual -->
+        <input type="number" id="scannerInput" class="scanner-input" placeholder="Toca aquí para escribir..." autocomplete="off">
       </div>
       <p style="color: var(--text-gray); font-size: 12px; margin-top: 15px; line-height: 1.4;">
         El sistema registrará automáticamente el <strong id="scanner-tipo-text"></strong> una vez detecte el código QR de la tarjeta.
@@ -117,11 +117,30 @@
   <script>
     let tipoRegistroActual = ''; 
     let html5QrCode = null;
+    let audioCtx = null;
 
     // =========================================================================
     // ⚠️ PEGA AQUÍ TU NUEVA URL DE APLICACIÓN WEB DE APPS SCRIPT
     // =========================================================================
     const URL_API_GAS = "https://script.google.com/macros/s/AKfycbyb-z6Ak85r81b2n3FvDMjrfArLzEvfRD_rwcM-hGb1bpHvKVykuJnO3ISsJXQYLKK4yw/exec";
+
+    function reproducirSonidoBeep() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.12);
+      } catch (e) {
+        console.log("Audio omitido");
+      }
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
       const scannerInput = document.getElementById('scannerInput');
@@ -133,20 +152,16 @@
       });
     });
 
-    function activarAudioYForzarTeclado() {
-      // Prepara el audio para que el navegador móvil le otorgue permisos
+    function activarAudio() {
       const beep = document.getElementById('beepAudio');
       beep.volume = 0;
       beep.play().catch(e => {});
       beep.pause();
       beep.volume = 1;
-      
-      // Asegurarse de que cualquier elemento activo pierda el foco para esconder teclado
-      if(document.activeElement) document.activeElement.blur();
     }
 
     function abrirScanner(tipo) {
-      activarAudioYForzarTeclado();
+      activarAudio(); // Desbloquea sonido en móvil
       
       tipoRegistroActual = tipo;
       document.getElementById('asistencia-menu').style.display = 'none';
@@ -163,8 +178,8 @@
       
       const input = document.getElementById('scannerInput');
       input.value = '';
-      input.removeAttribute('readonly'); 
-      input.focus(); // El focus con inputmode="none" oculta el teclado y permite leer el QR.
+      input.disabled = false;
+      // Se eliminó la instrucción "input.focus()" aquí para que el teclado NO se despliegue solo.
     }
 
     function detenerCamaraQR() {
@@ -190,7 +205,6 @@
       const archivo = event.target.files[0];
       if (!archivo) return;
       mostrarModalCarga();
-
       const lectorArchivo = new Html5Qrcode("reader");
       lectorArchivo.scanFile(archivo, true).then(decodedText => {
           try { lectorArchivo.clear(); } catch(e) {}
@@ -202,7 +216,7 @@
     }
 
     async function iniciarCamaraQR() {
-      activarAudioYForzarTeclado();
+      activarAudio();
       const btn = document.getElementById('btnActivarCamara');
       const readerDiv = document.getElementById('reader');
       
@@ -258,18 +272,18 @@
       document.getElementById('scannerInput').value = '';
     }
 
-    // El truco principal: al cerrar el modal, forzamos que TODO pierda el foco
     function cerrarModalScanner() {
       document.getElementById('modalScannerResultado').style.display = 'none';
       const input = document.getElementById('scannerInput');
       input.value = '';
       input.disabled = false;
+      
+      // Asegurar completamente que ningún campo virtual quede enfocado al cerrar
       input.blur(); 
       if(document.activeElement) document.activeElement.blur(); 
-      window.focus(); // Devuelve el foco al vacío del documento
+      window.focus(); 
       
-      // Lo enfocamos de nuevo pero gracias a inputmode="none" el teclado no saltará
-      setTimeout(() => { input.focus(); }, 100); 
+      // SIN focus automáticos. El teclado no saldrá.
     }
 
     function mostrarModalCarga() {
@@ -291,14 +305,12 @@
     function procesarEscaneo(valor) {
       if (!valor) return;
       
-      // REPRODUCE EL SONIDO "BEEP" AL INSTANTE
       document.getElementById('beepAudio').play().catch(e=>{});
 
       const input = document.getElementById('scannerInput');
       input.disabled = true; 
       input.value = valor;
-      input.blur(); 
-      if(document.activeElement) document.activeElement.blur(); // Muerte absoluta al teclado
+      input.blur(); // Asegura matar el teclado durante la consulta
 
       mostrarModalCarga();
 
