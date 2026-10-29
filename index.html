@@ -7,19 +7,12 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
-    :root {
-      --bg-main: #F4F7FE;
-      --text-dark: #2B3674;
-      --text-gray: #A3AED0;
-      --primary: #1abc9c;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    :root { --bg-main: #F4F7FE; --text-dark: #2B3674; --text-gray: #A3AED0; --primary: #1abc9c; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
     body { background-color: var(--bg-main); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-    
     .logo-container { text-align: center; margin-bottom: 30px; margin-top: 20px; }
     .logo-container img { max-width: 160px; }
-
-    /* ESTILOS MENÚ INICIAL */
+    
     #asistencia-menu { width: 100%; max-width: 500px; animation: fadeIn 0.4s; }
     .asistencia-card { background: white; border-radius: 15px; padding: 40px 20px; text-align: center; box-shadow: 0 8px 25px rgba(0,0,0,0.05); cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease; margin-bottom: 25px; }
     .asistencia-card:active { transform: scale(0.98); }
@@ -29,65 +22,50 @@
     .asistencia-card h3 { color: var(--text-dark); font-size: 22px; margin-bottom: 10px; }
     .asistencia-card p { color: var(--text-gray); font-size: 14px; }
 
-    /* ESTILOS VISTA DEL ESCÁNER */
     #asistencia-scanner { width: 100%; max-width: 500px; display: none; animation: fadeIn 0.4s; }
     .scanner-view { background: white; padding: 30px 20px; border-radius: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); text-align: center; }
-    
     .form-group { margin-bottom: 15px; text-align: left; }
     .form-group label { display: block; font-size: 13px; color: var(--text-dark); margin-bottom: 5px; font-weight: bold; }
-    .input-field { width: 100%; padding: 12px; font-size: 15px; border: 2px solid #e0e6ed; border-radius: 8px; outline: none; background: #fff; transition: 0.3s; color: var(--text-dark); }
-    .input-field:focus { border-color: var(--primary); }
+    .input-field { width: 100%; padding: 12px; font-size: 15px; border: 2px solid #e0e6ed; border-radius: 8px; outline: none; background: #fff; color: var(--text-dark); }
     
-    .scanner-input { width: 100%; padding: 15px 20px; font-size: 22px; text-align: center; border: 2px solid #ccc; border-radius: 10px; outline: none; font-weight: bold; letter-spacing: 2px; transition: border-color 0.3s; margin: 10px 0; }
+    /* Input con InputMode = none bloquea el teclado virtual en Android/iOS */
+    .scanner-input { width: 100%; padding: 15px 20px; font-size: 22px; text-align: center; border: 2px solid #ccc; border-radius: 10px; outline: none; font-weight: bold; letter-spacing: 2px; margin: 10px 0; background-color: #fff; }
     .scanner-input:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(26,188,156,0.2); }
     
-    /* BOTONES */
-    .btn-cancel { background: #f1f5f9; color: #475569; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
-    .btn-cancel:hover { background: #e2e8f0; }
-    
-    .btn-camera { border: none; padding: 22px; border-radius: 15px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 20px; width: 100%; color: white; display: flex; justify-content: center; align-items: center; gap: 12px; box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4); }
-    .btn-camera:active { transform: scale(0.96); box-shadow: 0 2px 8px rgba(52, 152, 219, 0.4); }
-    
+    .btn-cancel { background: #f1f5f9; color: #475569; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-camera { border: none; padding: 22px; border-radius: 15px; font-weight: bold; font-size: 20px; width: 100%; color: white; display: flex; justify-content: center; align-items: center; gap: 12px; box-shadow: 0 6px 15px rgba(52,152,219,0.4); }
     #reader { width: 100%; border-radius: 10px; overflow: hidden; border: 2px solid var(--text-gray); margin-bottom: 20px; display: none; background: #000; }
-    #reader video { object-fit: cover; border-radius: 10px; width: 100%; }
-
-    /* MODALES DE RESULTADO Y ALERTAS */
+    
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 3000; padding: 20px; backdrop-filter: blur(3px); }
-    .modal-box { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.3); animation: scaleIn 0.3s ease; }
+    .modal-box { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; animation: scaleIn 0.3s ease; }
     .modal-icon { font-size: 60px; margin-bottom: 15px; }
     .modal-icon.success { color: #27ae60; }
     .modal-icon.error { color: #e74c3c; }
-    .modal-icon.warning { color: #f39c12; }
     .modal-msg { font-size: 16px; color: var(--text-dark); line-height: 1.5; margin-bottom: 25px; word-break: break-word; }
+    .btn-block { background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 30px; font-size: 15px; font-weight: bold; width: 100%; }
     
-    .btn-block { background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 30px; font-size: 15px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; }
-    .btn-block:active { background-color: #2980b9; transform: scale(0.98); }
-    
-    .modal-buttons-row { display: flex; gap: 10px; justify-content: center; }
-    .modal-buttons-row button { flex: 1; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: bold; border: none; cursor: pointer; color: white; }
-    .btn-cancel-modal { background-color: #94a3b8; }
-    .btn-accept-modal { background-color: #10b981; }
-
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   </style>
 </head>
 <body>
 
+  <!-- Audio nativo integrado para el bip de escáner -->
+  <audio id="beepAudio" preload="auto">
+    <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
+  </audio>
+
   <div class="logo-container">
     <img src="https://i.postimg.cc/R0sW077H/Logo-con-descripcion.png" alt="Logo GEEC GAIA VITARE">
   </div>
 
-  <!-- MENÚ INICIAL -->
   <div id="asistencia-menu">
     <h2 style="text-align:center; color: var(--text-dark); margin-bottom: 25px;">Control de Asistencia</h2>
-    
     <div class="asistencia-card ingreso" onclick="abrirScanner('INGRESO')">
       <i class="fas fa-sign-in-alt" style="color: #27ae60;"></i>
       <h3>Registrar Ingreso</h3>
       <p>Escaneo de código QR para registrar la entrada.</p>
     </div>
-    
     <div class="asistencia-card salida" onclick="abrirScanner('SALIDA')">
       <i class="fas fa-sign-out-alt" style="color: #e74c3c;"></i>
       <h3>Registrar Salida</h3>
@@ -95,7 +73,6 @@
     </div>
   </div>
   
-  <!-- VISTA DEL ESCÁNER -->
   <div id="asistencia-scanner">
     <div class="scanner-view">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -105,13 +82,11 @@
       
       <div class="form-group">
         <label>Fecha del registro:</label>
-        <input type="date" id="scannerFecha" class="input-field" readonly style="background-color: #f8fafc; font-weight: bold; text-align: center; cursor: not-allowed;">
+        <input type="date" id="scannerFecha" class="input-field" readonly style="background-color: #f8fafc; font-weight: bold; text-align: center;">
       </div>
       
-      <!-- CONTENEDOR CÁMARA NATIVA (FALLBACK OCULTO) -->
       <input type="file" id="scanner_file_nativo" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoQRNativaAsistencia(event)">
       
-      <!-- BOTÓN ÚNICO GRANDE -->
       <div style="margin-bottom: 20px;">
         <button id="btnActivarCamara" class="btn-camera" style="background-color: #3498db;" onclick="iniciarCamaraQR()">
           <i class="fas fa-camera" style="font-size: 28px;"></i> Nuevo Registro
@@ -122,85 +97,74 @@
       
       <div class="form-group" style="margin-top: 20px;">
         <label>Identificación (Manual o Pistola QR):</label>
-        <input type="text" id="scannerInput" class="scanner-input" placeholder="Esperando escaneo..." autocomplete="off">
+        <!-- inputmode="none" es LA CLAVE para que Android/iOS no desplieguen el teclado virtual -->
+        <input type="text" id="scannerInput" class="scanner-input" placeholder="Esperando escaneo..." autocomplete="off" inputmode="none" readonly>
       </div>
-      
       <p style="color: var(--text-gray); font-size: 12px; margin-top: 15px; line-height: 1.4;">
         El sistema registrará automáticamente el <strong id="scanner-tipo-text"></strong> una vez detecte el código QR de la tarjeta.
       </p>
     </div>
   </div>
 
-  <!-- MODAL: RESULTADO DEL ESCÁNER (ÉXITO / ERROR / CARGA) -->
   <div class="modal-overlay" id="modalScannerResultado">
     <div class="modal-box">
       <div id="scannerIcon" class="modal-icon"><i class="fas fa-spinner fa-spin" style="color: #3498db;"></i></div>
-      <p class="modal-msg" id="scannerMsg">Procesando...</p>
+      <p class="modal-msg" id="scannerMsg">Validando registro de asistencia...</p>
       <button class="btn-block" id="btnContinuarScanner" style="display: none;" onclick="cerrarModalScanner()">Continuar Escaneando</button>
-    </div>
-  </div>
-
-  <!-- MODAL: CONFIRMACIÓN GENÉRICA -->
-  <div class="modal-overlay" id="modalConfirmacion">
-    <div class="modal-box">
-      <div class="modal-icon warning"><i class="fas fa-exclamation-triangle"></i></div>
-      <p class="modal-msg" id="msgConfirmacion">¿Estás seguro?</p>
-      <div class="modal-buttons-row">
-        <button class="btn-cancel-modal" onclick="cerrarConfirmacion()">Cancelar</button>
-        <button class="btn-accept-modal" id="btnAceptarConfirmacion">Aceptar</button>
-      </div>
     </div>
   </div>
 
   <script>
     let tipoRegistroActual = ''; 
     let html5QrCode = null;
-    let callbackConfirmacionActivo = null;
 
     // =========================================================================
-    // PEGA AQUÍ TU NUEVA URL DE APLICACIÓN WEB DE APPS SCRIPT (LA NUEVA IMPLEMENTACIÓN)
+    // ⚠️ PEGA AQUÍ TU NUEVA URL DE APLICACIÓN WEB DE APPS SCRIPT
     // =========================================================================
     const URL_API_GAS = "https://script.google.com/macros/s/AKfycbyb-z6Ak85r81b2n3FvDMjrfArLzEvfRD_rwcM-hGb1bpHvKVykuJnO3ISsJXQYLKK4yw/exec";
 
     document.addEventListener('DOMContentLoaded', () => {
       const scannerInput = document.getElementById('scannerInput');
-      
       scannerInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
-          const val = this.value.trim();
-          procesarEscaneo(val);
-        }
-      });
-
-      // El teclado no se abre automáticamente por la remoción del input.focus()[cite: 22]
-      document.getElementById('asistencia-scanner').addEventListener('click', function(e) {
-        if(e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.tagName === 'INPUT') return;
-        if(document.getElementById('modalScannerResultado').style.display === 'none') {
-          // El usuario puede clickear voluntariamente para escribir
+          procesarEscaneo(this.value.trim());
         }
       });
     });
 
+    function activarAudioYForzarTeclado() {
+      // Prepara el audio para que el navegador móvil le otorgue permisos
+      const beep = document.getElementById('beepAudio');
+      beep.volume = 0;
+      beep.play().catch(e => {});
+      beep.pause();
+      beep.volume = 1;
+      
+      // Asegurarse de que cualquier elemento activo pierda el foco para esconder teclado
+      if(document.activeElement) document.activeElement.blur();
+    }
+
     function abrirScanner(tipo) {
+      activarAudioYForzarTeclado();
+      
       tipoRegistroActual = tipo;
       document.getElementById('asistencia-menu').style.display = 'none';
       document.getElementById('asistencia-scanner').style.display = 'block';
       
       let titulo = tipo === 'INGRESO' ? 'Registrar Ingresos' : 'Registrar Salidas';
       let color = tipo === 'INGRESO' ? '#27ae60' : '#e74c3c';
-      
       document.getElementById('scanner-titulo').innerHTML = `<i class="fas fa-qrcode" style="color:${color};"></i> ${titulo}`;
       document.getElementById('scanner-tipo-text').textContent = tipo.toLowerCase();
       
       let hoy = new Date();
       let offset = hoy.getTimezoneOffset() * 60000;
-      let localISOTime = (new Date(hoy - offset)).toISOString().split('T')[0];
-      document.getElementById('scannerFecha').value = localISOTime;
+      document.getElementById('scannerFecha').value = (new Date(hoy - offset)).toISOString().split('T')[0];
       
       const input = document.getElementById('scannerInput');
       input.value = '';
-      input.disabled = false;
+      input.removeAttribute('readonly'); 
+      input.focus(); // El focus con inputmode="none" oculta el teclado y permite leer el QR.
     }
 
     function detenerCamaraQR() {
@@ -219,42 +183,26 @@
     function dispararCamaraNativaAsistencia() {
       detenerCamaraQR();
       const inputNativo = document.getElementById('scanner_file_nativo');
-      if (inputNativo) {
-        inputNativo.value = ""; 
-        inputNativo.click();
-      }
+      if (inputNativo) { inputNativo.value = ""; inputNativo.click(); }
     }
 
     function procesarFotoQRNativaAsistencia(event) {
       const archivo = event.target.files[0];
       if (!archivo) return;
-
-      document.getElementById('modalScannerResultado').style.display = 'flex';
-      const icon = document.getElementById('scannerIcon');
-      const msg = document.getElementById('scannerMsg');
-      
-      icon.className = 'modal-icon';
-      icon.innerHTML = '<i class="fas fa-spinner fa-spin" style="color: #3498db;"></i>';
-      msg.innerHTML = 'Analizando imagen para detectar el código QR...';
-      document.getElementById('btnContinuarScanner').style.display = 'none';
+      mostrarModalCarga();
 
       const lectorArchivo = new Html5Qrcode("reader");
-      lectorArchivo.scanFile(archivo, true)
-        .then(decodedText => {
-          let codigoLeido = decodedText.trim();
+      lectorArchivo.scanFile(archivo, true).then(decodedText => {
           try { lectorArchivo.clear(); } catch(e) {}
-          procesarEscaneo(codigoLeido);
-        })
-        .catch(err => {
+          procesarEscaneo(decodedText.trim());
+      }).catch(err => {
           try { lectorArchivo.clear(); } catch(e) {}
-          icon.className = 'modal-icon error';
-          icon.innerHTML = '<i class="fas fa-times-circle"></i>';
-          msg.innerHTML = "No se detectó un código QR legible en la foto. Asegúrese de enfocar correctamente el carnet y vuelva a intentarlo.";
-          document.getElementById('btnContinuarScanner').style.display = 'block';
-        });
+          mostrarError("No se detectó un código QR legible. Vuelva a intentarlo.");
+      });
     }
 
     async function iniciarCamaraQR() {
+      activarAudioYForzarTeclado();
       const btn = document.getElementById('btnActivarCamara');
       const readerDiv = document.getElementById('reader');
       
@@ -264,10 +212,8 @@
         btn.style.backgroundColor = '#3498db';
         return;
       }
-
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        dispararCamaraNativaAsistencia();
-        return;
+        dispararCamaraNativaAsistencia(); return;
       }
       
       readerDiv.style.display = 'block';
@@ -277,54 +223,31 @@
 
       try {
         const devices = await Html5Qrcode.getCameras();
-        
         if (devices && devices.length > 0) {
           html5QrCode = new Html5Qrcode("reader");
-          
           let cameraId = devices[0].id;
           for (let i = 0; i < devices.length; i++) {
-            let label = devices[i].label.toLowerCase();
-            if (label.includes("back") || label.includes("trasera") || label.includes("environment")) {
-              cameraId = devices[i].id;
-              break;
+            if (devices[i].label.toLowerCase().includes("back") || devices[i].label.toLowerCase().includes("environment")) {
+              cameraId = devices[i].id; break;
             }
           }
-
-          await html5QrCode.start(
-            cameraId, 
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            (decodedText, decodedResult) => {
+          await html5QrCode.start(cameraId, { fps: 10, qrbox: { width: 250, height: 250 } }, (decodedText) => {
               detenerCamaraQR();
               btn.innerHTML = '<i class="fas fa-camera" style="font-size: 28px;"></i> Nuevo Registro';
               btn.style.backgroundColor = '#3498db';
               procesarEscaneo(decodedText);
-            },
-            (errorMessage) => {}
-          );
-          
+          }, (errorMessage) => {});
           btn.innerHTML = '<i class="fas fa-stop" style="font-size: 28px;"></i> Detener Cámara';
           btn.style.backgroundColor = '#e74c3c';
           btn.disabled = false;
         } else {
-          throw new Error("No se encontraron cámaras conectadas al dispositivo.");
+          throw new Error("Sin cámaras");
         }
       } catch (err) {
-        let msjError = "No se pudo iniciar el escáner en vivo. ";
-        
-        if (err.name === 'NotAllowedError' || (err.message && err.message.includes('NotAllowedError')) || (err.message && err.message.includes('Permission denied'))) {
-          msjError += "Permiso denegado por el navegador. ";
-        }
-        
-        msjError += "¿Desea usar la Cámara Directa para capturar el QR?";
-        
-        detenerCamaraQR();
+        dispararCamaraNativaAsistencia();
         btn.innerHTML = '<i class="fas fa-camera" style="font-size: 28px;"></i> Nuevo Registro';
         btn.style.backgroundColor = '#3498db';
         btn.disabled = false;
-        
-        mostrarConfirmacionModal(msjError, function() {
-           dispararCamaraNativaAsistencia();
-        });
       }
     }
 
@@ -335,114 +258,82 @@
       document.getElementById('scannerInput').value = '';
     }
 
+    // El truco principal: al cerrar el modal, forzamos que TODO pierda el foco
     function cerrarModalScanner() {
       document.getElementById('modalScannerResultado').style.display = 'none';
       const input = document.getElementById('scannerInput');
       input.value = '';
       input.disabled = false;
-      input.focus();
+      input.blur(); 
+      if(document.activeElement) document.activeElement.blur(); 
+      window.focus(); // Devuelve el foco al vacío del documento
+      
+      // Lo enfocamos de nuevo pero gracias a inputmode="none" el teclado no saltará
+      setTimeout(() => { input.focus(); }, 100); 
     }
 
-    // =========================================================================
-    // PROCESAMIENTO Y ENVÍO AL SERVIDOR (BACKEND) VÍA FETCH
-    // =========================================================================
+    function mostrarModalCarga() {
+      document.getElementById('modalScannerResultado').style.display = 'flex';
+      const icon = document.getElementById('scannerIcon');
+      icon.className = 'modal-icon';
+      icon.innerHTML = '<i class="fas fa-spinner fa-spin" style="color: #3498db;"></i>';
+      document.getElementById('scannerMsg').innerHTML = 'Validando registro de asistencia...';
+      document.getElementById('btnContinuarScanner').style.display = 'none';
+    }
+
+    function mostrarError(mensaje) {
+      document.getElementById('scannerIcon').className = 'modal-icon error';
+      document.getElementById('scannerIcon').innerHTML = '<i class="fas fa-times-circle"></i>';
+      document.getElementById('scannerMsg').innerHTML = mensaje;
+      document.getElementById('btnContinuarScanner').style.display = 'block';
+    }
+
     function procesarEscaneo(valor) {
       if (!valor) return;
+      
+      // REPRODUCE EL SONIDO "BEEP" AL INSTANTE
+      document.getElementById('beepAudio').play().catch(e=>{});
+
       const input = document.getElementById('scannerInput');
       input.disabled = true; 
       input.value = valor;
+      input.blur(); 
+      if(document.activeElement) document.activeElement.blur(); // Muerte absoluta al teclado
 
-      document.getElementById('modalScannerResultado').style.display = 'flex';
-      const icon = document.getElementById('scannerIcon');
-      const msg = document.getElementById('scannerMsg');
-      
-      icon.className = 'modal-icon';
-      icon.innerHTML = '<i class="fas fa-spinner fa-spin" style="color: #3498db;"></i>';
-      msg.innerHTML = 'Validando registro de asistencia...';
-      document.getElementById('btnContinuarScanner').style.display = 'none';
+      mostrarModalCarga();
 
       fetch(URL_API_GAS, {
         method: 'POST',
-        body: JSON.stringify({
-          action: 'registrarAsistenciaScanner',
-          identificacion: valor,
-          tipoRegistro: tipoRegistroActual
-        }),
+        body: JSON.stringify({ action: 'registrarAsistenciaScanner', identificacion: valor, tipoRegistro: tipoRegistroActual }),
         headers: { 'Content-Type': 'text/plain;charset=utf-8' }
       })
       .then(response => response.json())
       .then(res => {
         document.getElementById('btnContinuarScanner').style.display = 'block';
-        
         if (res && res.exito) {
-          icon.className = 'modal-icon success';
-          icon.innerHTML = '<i class="fas fa-check-circle"></i>';
-          
+          document.getElementById('scannerIcon').className = 'modal-icon success';
+          document.getElementById('scannerIcon').innerHTML = '<i class="fas fa-check-circle"></i>';
           let parkingHtml = '';
-          if (tipoRegistroActual === 'INGRESO' && res.parqueadero !== undefined) {
+          if (tipoRegistroActual === 'INGRESO' && res.parqueadero) {
             let auth = res.parqueadero.trim().toUpperCase();
-            
             if (auth === 'NO' || auth === 'N/A' || auth === 'NA' || auth === '') {
-              parkingHtml = `
-                <div style="margin-top: 20px; padding: 20px; border-radius: 12px; background: #fee2e2; border: 3px solid #ef4444; color: #b91c1c; animation: scaleIn 0.4s ease;">
-                  <i class="fas fa-ban" style="font-size: 40px; margin-bottom: 10px;"></i>
-                  <div style="font-size: 20px; font-weight: 900; text-transform: uppercase;">SIN PARQUEADERO</div>
-                  <div style="font-size: 13px; font-weight: bold; margin-top: 5px;">No autorizado para ingresar vehículo</div>
-                </div>
-              `;
+              parkingHtml = `<div style="margin-top: 20px; padding: 15px; border-radius: 12px; background: #fee2e2; border: 3px solid #ef4444; color: #b91c1c; animation: scaleIn 0.4s ease;"><i class="fas fa-ban" style="font-size: 30px; margin-bottom: 5px;"></i><div style="font-size: 16px; font-weight: 900; text-transform: uppercase;">SIN PARQUEADERO</div></div>`;
             } else {
               let iconClass = 'fa-parking'; 
-              if (auth.includes('MOTO')) {
-                iconClass = 'fa-motorcycle';
-              } else if (auth.includes('CARRO') || auth.includes('AUTO')) {
-                iconClass = 'fa-car';
-              } else if (auth.includes('BICI')) {
-                iconClass = 'fa-bicycle';
-              }
-
-              parkingHtml = `
-                <div style="margin-top: 20px; padding: 20px; border-radius: 12px; background: #d1fae5; border: 3px solid #10b981; color: #047857; animation: scaleIn 0.4s ease;">
-                  <i class="fas ${iconClass}" style="font-size: 45px; margin-bottom: 10px;"></i>
-                  <div style="font-size: 16px; font-weight: 900; text-transform: uppercase;">PARQUEADERO AUTORIZADO</div>
-                  <div style="font-size: 26px; font-weight: 900; color: #065f46; margin-top: 8px; background: white; padding: 5px; border-radius: 8px; border: 2px solid #047857;">${auth}</div>
-                </div>
-              `;
+              if (auth.includes('MOTO')) iconClass = 'fa-motorcycle';
+              else if (auth.includes('CARRO') || auth.includes('AUTO')) iconClass = 'fa-car';
+              else if (auth.includes('BICI')) iconClass = 'fa-bicycle';
+              parkingHtml = `<div style="margin-top: 20px; padding: 15px; border-radius: 12px; background: #d1fae5; border: 3px solid #10b981; color: #047857; animation: scaleIn 0.4s ease;"><i class="fas ${iconClass}" style="font-size: 35px; margin-bottom: 5px;"></i><div style="font-size: 14px; font-weight: 900; text-transform: uppercase;">PARQUEADERO AUTORIZADO</div><div style="font-size: 20px; font-weight: 900; color: #065f46; margin-top: 8px; background: white; padding: 5px; border-radius: 8px; border: 2px solid #047857;">${auth}</div></div>`;
             }
           }
-          
-          msg.innerHTML = res.mensaje + parkingHtml; 
+          document.getElementById('scannerMsg').innerHTML = res.mensaje + parkingHtml; 
         } else {
-          icon.className = 'modal-icon error';
-          icon.innerHTML = '<i class="fas fa-times-circle"></i>';
-          msg.innerHTML = res ? res.mensaje : 'Error desconocido. Intente nuevamente.';
+          mostrarError(res ? res.mensaje : 'Error desconocido. Intente nuevamente.');
         }
-      })
-      .catch(err => {
-        document.getElementById('btnContinuarScanner').style.display = 'block';
-        icon.className = 'modal-icon error';
-        icon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
-        msg.innerHTML = 'Error de conexión con el servidor: ' + err.message;
+      }).catch(err => {
+        mostrarError('Error de conexión: ' + err.message);
       });
     }
-
-    // =========================================================================
-    // UTILIDADES DE UI
-    // =========================================================================
-    function mostrarConfirmacionModal(mensaje, callback) {
-      document.getElementById('msgConfirmacion').textContent = mensaje;
-      document.getElementById('modalConfirmacion').style.display = 'flex';
-      callbackConfirmacionActivo = callback;
-    }
-
-    function cerrarConfirmacion() {
-      document.getElementById('modalConfirmacion').style.display = 'none';
-      callbackConfirmacionActivo = null;
-    }
-
-    document.getElementById('btnAceptarConfirmacion').addEventListener('click', function() {
-      if(callbackConfirmacionActivo) callbackConfirmacionActivo();
-      cerrarConfirmacion();
-    });
   </script>
 </body>
 </html>
