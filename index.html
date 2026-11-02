@@ -22,7 +22,6 @@
     .asistencia-card h3 { color: var(--text-dark); font-size: 22px; margin-bottom: 10px; }
     .asistencia-card p { color: var(--text-gray); font-size: 14px; }
 
-    /* NUEVO BOTÓN DE HISTORIAL COMPACTO */
     .btn-historial-permisos {
       background-color: #34495e;
       color: white;
@@ -64,7 +63,6 @@
     .modal-msg { font-size: 16px; color: var(--text-dark); line-height: 1.5; margin-bottom: 25px; word-break: break-word; }
     .btn-block { background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 30px; font-size: 15px; font-weight: bold; width: 100%; cursor: pointer; }
 
-    /* ESTILOS DEL MODAL DE HISTORIAL PARA EL ESCÁNER */
     .modal-historial-box {
       background: white;
       padding: 20px;
@@ -83,7 +81,7 @@
     .historial-list { flex: 1; overflow-y: auto; text-align: left; }
     .permiso-item { background: #f8fafc; border: 1px solid #e0e6ed; border-radius: 10px; padding: 15px; margin-bottom: 10px; }
     .permiso-item h4 { color: var(--text-dark); font-size: 15px; margin-bottom: 5px; }
-    .permiso-item p { color: var(--text-gray); font-size: 12px; margin-bottom: 3px; }
+    .permiso-item p { color: var(--text-gray); font-size: 12px; margin-bottom: 4px; }
     .btn-ver-pdf { background-color: #1abc9c; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; margin-top: 8px; display: inline-flex; align-items: center; gap: 5px;}
     
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -92,7 +90,6 @@
 </head>
 <body>
 
-  <!-- Audio nativo integrado para el bip de escáner -->
   <audio id="beepAudio" preload="auto">
     <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
   </audio>
@@ -114,7 +111,6 @@
       <p>Escaneo de código QR para registrar la salida.</p>
     </div>
     
-    <!-- NUEVO BOTÓN COMPACTO PARA VER NOVEDADES -->
     <button class="btn-historial-permisos" onclick="abrirHistorialEscaner()">
       <i class="fas fa-file-alt"></i> Validar Permisos y Novedades
     </button>
@@ -160,7 +156,6 @@
     </div>
   </div>
 
-  <!-- NUEVO MODAL: HISTORIAL DE PERMISOS -->
   <div class="modal-overlay" id="modalHistorialScanner">
     <div class="modal-historial-box">
       <i class="fas fa-times modal-close-icon" onclick="document.getElementById('modalHistorialScanner').style.display='none'"></i>
@@ -178,15 +173,13 @@
       </div>
     </div>
   </div>
+
   <script>
     let tipoRegistroActual = ''; 
     let html5QrCode = null;
     let audioCtx = null;
-    let listaPermisosGlobal = []; // Para almacenar el historial de novedades y filtrarlo localmente
+    let listaPermisosGlobal = []; 
 
-    // =========================================================================
-    // URL DE LA APLICACIÓN WEB DE APPS SCRIPT
-    // =========================================================================
     const URL_API_GAS = "https://script.google.com/macros/s/AKfycbyb-z6Ak85r81b2n3FvDMjrfArLzEvfRD_rwcM-hGb1bpHvKVykuJnO3ISsJXQYLKK4yw/exec";
 
     function reproducirSonidoBeep() {
@@ -226,8 +219,7 @@
     }
 
     function abrirScanner(tipo) {
-      activarAudio(); // Desbloquea sonido en móvil
-      
+      activarAudio();
       tipoRegistroActual = tipo;
       document.getElementById('asistencia-menu').style.display = 'none';
       document.getElementById('asistencia-scanner').style.display = 'block';
@@ -407,10 +399,6 @@
       });
     }
 
-    // =========================================================================
-    // LÓGICA DEL NUEVO BOTÓN DE HISTORIAL DE PERMISOS
-    // =========================================================================
-    
     function abrirHistorialEscaner() {
       document.getElementById('modalHistorialScanner').style.display = 'flex';
       const container = document.getElementById('listaPermisosEsc');
@@ -468,6 +456,7 @@
             <p><strong><i class="fas fa-calendar-alt"></i> Aplica para:</strong> ${p.fechaAplica}</p>
             <p><strong><i class="fas fa-tag"></i> Tipo:</strong> <span style="background:${badgeColor}; color:white; padding:2px 6px; border-radius:4px; font-weight:bold;">${p.tipo}</span></p>
             <p><strong><i class="fas fa-info-circle"></i> Motivo:</strong> ${p.motivo}</p>
+            <p><strong><i class="fas fa-user-tie"></i> Jefe Inmediato:</strong> ${p.jefe}</p>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px dashed #ccc; padding-top:10px;">
               <small style="color: #7f8c8d;">${p.id}</small>
               ${botonVer}
