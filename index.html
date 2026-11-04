@@ -69,7 +69,7 @@
     .permiso-item p { color: var(--text-gray); font-size: 12px; margin-bottom: 4px; }
     .btn-ver-pdf { background-color: #1abc9c; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; margin-top: 8px; display: inline-flex; align-items: center; gap: 5px;}
     
-    /* NUEVO: SISTEMA DE TOASTS FLOTANTES PARA NO BLOQUEAR LA PANTALLA */
+    /* SISTEMA DE TOASTS FLOTANTES PARA NO BLOQUEAR LA PANTALLA */
     .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
     .toast { background: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; min-width: 280px; max-width: 350px; transform: translateX(120%); transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); border-left: 5px solid #ccc; pointer-events: auto;}
     .toast.show { transform: translateX(0); }
@@ -84,7 +84,7 @@
     .toast-title { font-weight: bold; font-size: 14px; color: var(--text-dark); }
     .toast-msg { font-size: 12px; color: #5f748d; line-height: 1.4; margin-top: 4px;}
 
-    /* NUEVO: INDICADOR DE SINCRONIZACIÓN EN SEGUNDO PLANO */
+    /* INDICADOR DE SINCRONIZACIÓN EN SEGUNDO PLANO */
     .sync-badge { position: fixed; bottom: 20px; right: 20px; background: #f39c12; color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; transition: 0.3s; opacity: 0; transform: translateY(20px); pointer-events: none;}
     .sync-badge.active { opacity: 1; transform: translateY(0); }
 
@@ -179,6 +179,7 @@
       </div>
     </div>
   </div>
+
   <script>
     let tipoRegistroActual = ''; 
     let html5QrCode = null;
@@ -295,8 +296,9 @@
       const input = document.getElementById('scannerInput');
       input.value = '';
       input.disabled = false;
-      // Mantiene el focus automático para uso con pistola conectada
-      setTimeout(() => input.focus(), 300);
+      
+      // Aseguramos que el teclado no suba forzando el desenfoque
+      input.blur(); 
     }
 
     function cerrarScanner() {
@@ -319,7 +321,7 @@
       // 2. Limpiar la pantalla instantáneamente para el siguiente
       const input = document.getElementById('scannerInput');
       input.value = ''; 
-      input.focus(); // Retiene el foco para la pistola USB/Bluetooth
+      input.blur(); // Asegura cerrar el teclado o perder el foco
       
       // 3. Agregar a la cola de sincronización en segundo plano
       colaSincronizacion.push({
@@ -336,11 +338,10 @@
     }
 
     async function procesarCola() {
-      // Evitar ejecuciones simultáneas y detenerse si está vacía
       if (procesandoCola || colaSincronizacion.length === 0) return;
       
       procesandoCola = true;
-      const itemActual = colaSincronizacion[0]; // Toma el más antiguo
+      const itemActual = colaSincronizacion[0];
 
       try {
         const response = await fetch(URL_API_GAS, {
@@ -356,7 +357,7 @@
         
         const res = await response.json();
 
-        // 5. Mostrar el resultado de ESTE escaneo usando Toasts (no bloquea)
+        // Mostrar el resultado (no bloquea la pantalla)
         if (res && res.exito) {
           let msg = res.nombreEmp ? `<b>${res.nombreEmp}</b>` : `ID: ${itemActual.identificacion}`;
           if (res.parqueadero && res.parqueadero !== 'NO' && itemActual.tipoRegistro === 'INGRESO') {
@@ -364,22 +365,19 @@
           }
           mostrarToast('Sincronizado', msg, 'success');
         } else {
-          // Si el sistema lo rechazó por doble ingreso, invalido, etc.
           mostrarToast('Alerta de Asistencia', res.mensaje || `Error ID: ${itemActual.identificacion}`, 'error');
         }
         
-        // 6. Si la red respondió (bien o mal lógicamente), lo quitamos de la cola
+        // Quitar de la cola
         colaSincronizacion.shift();
 
       } catch (err) {
         mostrarToast('Error de Red', `Retraso en ID: ${itemActual.identificacion}. Reintentando...`, 'error');
-        // Si hay error de internet real (ej. se fue el Wifi), se detiene y reintenta en 3 seg
         procesandoCola = false;
         setTimeout(procesarCola, 3000);
         return; 
       }
 
-      // 7. Liberar el procesador y llamar recursivamente por si hay más
       actualizarBadgeSync();
       procesandoCola = false;
       procesarCola();
