@@ -69,7 +69,7 @@
     .permiso-item p { color: var(--text-gray); font-size: 12px; margin-bottom: 4px; }
     .btn-ver-pdf { background-color: #1abc9c; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; margin-top: 8px; display: inline-flex; align-items: center; gap: 5px;}
     
-    /* SISTEMA DE TOASTS FLOTANTES PARA NO BLOQUEAR LA PANTALLA */
+    /* SISTEMA DE TOASTS FLOTANTES */
     .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
     .toast { background: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; min-width: 280px; max-width: 350px; transform: translateX(120%); transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); border-left: 5px solid #ccc; pointer-events: auto;}
     .toast.show { transform: translateX(0); }
@@ -84,7 +84,7 @@
     .toast-title { font-weight: bold; font-size: 14px; color: var(--text-dark); }
     .toast-msg { font-size: 12px; color: #5f748d; line-height: 1.4; margin-top: 4px;}
 
-    /* INDICADOR DE SINCRONIZACIÓN EN SEGUNDO PLANO */
+    /* INDICADOR DE SINCRONIZACIÓN */
     .sync-badge { position: fixed; bottom: 20px; right: 20px; background: #f39c12; color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; transition: 0.3s; opacity: 0; transform: translateY(20px); pointer-events: none;}
     .sync-badge.active { opacity: 1; transform: translateY(0); }
 
@@ -94,15 +94,12 @@
 </head>
 <body>
 
-  <!-- Audio nativo integrado para el bip de escáner -->
   <audio id="beepAudio" preload="auto">
     <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
   </audio>
 
-  <!-- CONTENEDOR DE NOTIFICACIONES FLOTANTES (CACHE) -->
   <div class="toast-container" id="toastContainer"></div>
   
-  <!-- INDICADOR DE ESTADO DE COLA -->
   <div id="syncBadge" class="sync-badge">
     <i class="fas fa-sync fa-spin"></i> <span>Sincronizando (<span id="syncCount">0</span>)</span>
   </div>
@@ -161,7 +158,6 @@
     </div>
   </div>
 
-  <!-- MODAL: HISTORIAL DE PERMISOS -->
   <div class="modal-overlay" id="modalHistorialScanner">
     <div class="modal-historial-box">
       <i class="fas fa-times modal-close-icon" onclick="document.getElementById('modalHistorialScanner').style.display='none'"></i>
@@ -181,22 +177,50 @@
   </div>
 
   <script>
+    // =========================================================================
+    // SISTEMA DE AUTO-RECARGA (Kiosco Autónomo)
+    // =========================================================================
+    const HORAS_INACTIVIDAD = 12; 
+    const TIEMPO_MAXIMO_MS = HORAS_INACTIVIDAD * 60 * 60 * 1000;
+    let ultimaInteraccion = Date.now();
+
+    function resetearInactividad() {
+      ultimaInteraccion = Date.now();
+    }
+
+    window.addEventListener('click', resetearInactividad);
+    window.addEventListener('touchstart', resetearInactividad);
+    window.addEventListener('keypress', resetearInactividad);
+
+    // Chequeo cíclico cada 5 minutos
+    setInterval(() => {
+      if (Date.now() - ultimaInteraccion > TIEMPO_MAXIMO_MS) {
+        window.location.reload(true);
+      }
+    }, 300000);
+
+    // Chequeo instantáneo al encender/desbloquear la pantalla
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        if (Date.now() - ultimaInteraccion > TIEMPO_MAXIMO_MS) {
+          window.location.reload(true);
+        }
+      }
+    });
+
+    // =========================================================================
+    // VARIABLES GLOBALES
+    // =========================================================================
     let tipoRegistroActual = ''; 
     let html5QrCode = null;
     let audioCtx = null;
     let listaPermisosGlobal = []; 
-    
-    // VARIABLES PARA LA COLA DE SINCRONIZACIÓN
     let colaSincronizacion = [];
     let procesandoCola = false;
-
-    // =========================================================================
-    // URL DE LA APLICACIÓN WEB DE APPS SCRIPT
-    // =========================================================================
     const URL_API_GAS = "https://script.google.com/macros/s/AKfycbyb-z6Ak85r81b2n3FvDMjrfArLzEvfRD_rwcM-hGb1bpHvKVykuJnO3ISsJXQYLKK4yw/exec";
 
     // ---------------------------------------------------------
-    // SISTEMA DE TOASTS (NOTIFICACIONES FLOTANTES)
+    // SISTEMA DE TOASTS
     // ---------------------------------------------------------
     function mostrarToast(titulo, mensaje, tipo) {
       const container = document.getElementById('toastContainer');
@@ -218,7 +242,6 @@
       
       setTimeout(() => toast.classList.add('show'), 10);
       
-      // Auto-eliminar después de 5 segundos
       setTimeout(() => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 400);
@@ -244,7 +267,6 @@
         const beep = document.getElementById('beepAudio');
         beep.currentTime = 0;
         beep.play().catch(e => {
-            // Fallback web audio api
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const oscillator = audioCtx.createOscillator();
@@ -297,7 +319,7 @@
       input.value = '';
       input.disabled = false;
       
-      // Aseguramos que el teclado no suba forzando el desenfoque
+      // Aseguramos que el teclado NO suba forzando el desenfoque
       input.blur(); 
     }
 
@@ -309,21 +331,18 @@
     }
 
     // ---------------------------------------------------------
-    // LÓGICA DE PROCESAMIENTO RÁPIDO (ENCOLAR Y SINCRONIZAR)
+    // LÓGICA DE PROCESAMIENTO RÁPIDO (ENCOLAR)
     // ---------------------------------------------------------
     function procesarEscaneo(valor) {
       if (!valor) return;
       
-      // 1. Sonido inmediato y captura de hora exacta
       reproducirSonidoBeep();
       const timestampExacto = new Date().toISOString(); 
       
-      // 2. Limpiar la pantalla instantáneamente para el siguiente
       const input = document.getElementById('scannerInput');
       input.value = ''; 
-      input.blur(); // Asegura cerrar el teclado o perder el foco
+      input.blur(); // Mantiene cerrado el teclado táctil
       
-      // 3. Agregar a la cola de sincronización en segundo plano
       colaSincronizacion.push({
         identificacion: valor,
         tipoRegistro: tipoRegistroActual,
@@ -333,7 +352,6 @@
       mostrarToast('En Cola', `Lectura: ${valor}`, 'sync');
       actualizarBadgeSync();
       
-      // 4. Iniciar el trabajador de fondo si no está activo
       procesarCola();
     }
 
@@ -357,7 +375,6 @@
         
         const res = await response.json();
 
-        // Mostrar el resultado (no bloquea la pantalla)
         if (res && res.exito) {
           let msg = res.nombreEmp ? `<b>${res.nombreEmp}</b>` : `ID: ${itemActual.identificacion}`;
           if (res.parqueadero && res.parqueadero !== 'NO' && itemActual.tipoRegistro === 'INGRESO') {
@@ -368,7 +385,6 @@
           mostrarToast('Alerta de Asistencia', res.mensaje || `Error ID: ${itemActual.identificacion}`, 'error');
         }
         
-        // Quitar de la cola
         colaSincronizacion.shift();
 
       } catch (err) {
@@ -384,7 +400,7 @@
     }
 
     // ---------------------------------------------------------
-    // LÓGICA DE CÁMARA QR HTML5
+    // CÁMARA QR HTML5
     // ---------------------------------------------------------
     function detenerCamaraQR() {
       if (html5QrCode) {
@@ -470,7 +486,7 @@
     }
 
     // ---------------------------------------------------------
-    // LÓGICA DEL HISTORIAL DE PERMISOS
+    // HISTORIAL DE PERMISOS
     // ---------------------------------------------------------
     function abrirHistorialEscaner() {
       document.getElementById('modalHistorialScanner').style.display = 'flex';
